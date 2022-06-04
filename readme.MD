@@ -1,9 +1,12 @@
 ## Mensageria com Rabbbitmq e Node Js
 
-### yarn install or npm install
+- yarn install ou npm install
 
-### yarn start
+- yarn start
+  script para registar a fila dead-letter e a fila demo
 
-### yarn start:sub
+- yarn start:sub
+  script para ouvir as mensagens enviadas
 
-### yarn start:pub
+- yarn start:pub
+  script para enviar mensagens
