@@ -1,8 +1,13 @@
 {
-  "name": "rabbitmq",
+  "name": "rabbitmq-dead-letter-exchange",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:sub": "node src/consumer/index.js",
+    "start:pub": "node src/producer/index.js"
+  },
   "dependencies": {
     "amqplib": "^0.10.0"
   }
