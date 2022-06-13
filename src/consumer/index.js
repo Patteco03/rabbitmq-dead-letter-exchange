@@ -2,7 +2,7 @@ const Queue = require("../queue");
 const AmqpConnection = require("../queue/connection");
 
 function handler() {
-  return Math.random() > 0.5 ? Promise.resolve() : Promise.reject();
+  return Math.random() > 0.7 ? Promise.resolve() : Promise.reject();
 }
 
 (async () => {

@@ -13,7 +13,5 @@ const AmqpConnection = require("../queue/connection");
       "Over the Hills and Far Away!"
     );
 
-  sendQueue();
-
-  setTimeout(() => process.exit(0), 500);
+  setInterval(() => sendQueue(), 500);
 })();
