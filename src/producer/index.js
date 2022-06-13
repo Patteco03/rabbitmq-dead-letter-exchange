@@ -8,10 +8,12 @@ const AmqpConnection = require("../queue/connection");
 
   const sendQueue = () =>
     queue.publish(
-      "demo-exchange",
-      "demo-queue",
+      "Events.BookOrdered",
+      "Events.BookOrdered",
       "Over the Hills and Far Away!"
     );
 
-  setInterval(() => sendQueue(), 3000);
+  sendQueue();
+
+  setTimeout(() => process.exit(0), 500);
 })();

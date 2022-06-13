@@ -10,18 +10,14 @@ class Queue {
   }
 
   async consume(channel, queue, handle) {
-    console.log("Waiting for consume.");
-
     return channel.consume(queue, async (msg) => {
       try {
-        console.log("Received new message.");
-        console.log(msg.content.toString());
-
         await handle();
+        console.log("[Success received]: ", msg.content.toString(), "\n");
 
         channel.ack(msg);
       } catch (error) {
-        console.error("ocorreu um erro");
+        console.log("[Error]: boom!");
         channel.nack(msg, false, false);
       }
     });
@@ -35,8 +31,8 @@ class Queue {
     return this.channel.assertQueue(nameQueue, args);
   }
 
-  async bindQueue(nameQueue, exchange, routingKey = "") {
-    await this.channel.bindQueue(nameQueue, exchange, routingKey);
+  async bindQueue(nameQueue, exchange, routingKey = "", args = {}) {
+    await this.channel.bindQueue(nameQueue, exchange, routingKey, args);
   }
 }
 

@@ -5,72 +5,93 @@ const Queue = require("./queue");
   const channel = await conn();
   const queue = new Queue(channel);
 
-  const mainExchange = "demo-exchange";
-  const mainQueue = "demo-queue";
+  const deadLetterExchange = "routing.deadletter";
+  const failedExchange = "routing.failed";
+  const routingExchange = "routing.retry";
 
-  const deadLetterExchange = "demo-dead-letter-exchange";
-  const deadLetterQueue = "demo-dead-letter-queue";
+  //** Config failed and retry */
+  await queue.assertExchange(deadLetterExchange, "headers");
+  await queue.assertExchange(failedExchange, "fanout");
+  await queue.assertExchange(routingExchange, "direct");
 
-  //** main exchange  */
-  await queue.assertExchange(mainExchange);
+  queue.assertQueue("queue.failed", {
+    autoDelete: false,
+    durable: true,
+    arguments: {
+      "x-queue-mode": "lazy",
+    },
+  });
+
+  queue.assertQueue("queue.deadletter", {
+    autoDelete: false,
+    durable: true,
+  });
+
+  queue.assertQueue("queue.retry.1.1000", {
+    autoDelete: true,
+    durable: true,
+    arguments: {
+      count: 1,
+      "x-dead-letter-exchange": routingExchange,
+      "x-message-ttl": 1000,
+    },
+  });
+
+  queue.assertQueue("queue.retry.2.5000", {
+    autoDelete: true,
+    durable: true,
+    arguments: {
+      count: 2,
+      "x-dead-letter-exchange": routingExchange,
+      "x-message-ttl": 5000,
+    },
+  });
+
+  queue.assertQueue("queue.retry.3.10000", {
+    autoDelete: true,
+    durable: true,
+    arguments: {
+      count: 3,
+      "x-dead-letter-exchange": routingExchange,
+      "x-message-ttl": 10000,
+    },
+  });
+
+  await queue.bindQueue("queue.failed", failedExchange);
+  await queue.bindQueue("queue.deadletter", deadLetterExchange, "", {
+    count: -1,
+    deadLetter: true,
+    "x-match": "any",
+  });
+  await queue.bindQueue("queue.retry.1.1000", deadLetterExchange, "", {
+    count: 1,
+    "x-match": "all",
+  });
+  await queue.bindQueue("queue.retry.2.5000", deadLetterExchange, "", {
+    count: 2,
+    "x-match": "all",
+  });
+  await queue.bindQueue("queue.retry.3.10000", deadLetterExchange, "", {
+    count: 3,
+    "x-match": "all",
+  });
+
+  // ** main configs */
+  const mainExchange = "Events.BookOrdered";
+  const mainQueue = "TestApp1.Events.BookOrdered";
+
+  await queue.assertExchange(mainExchange, "direct");
   queue.assertQueue(mainQueue, {
     autoDelete: false,
     durable: true,
     arguments: {
-      "x-queue-mode": "lazy",
-      "x-dead-letter-exchange": deadLetterExchange,
-      "x-message-ttl": 1000,
+      "x-dead-letter-exchange": failedExchange,
+      "x-dead-letter-routing-key": mainQueue,
+      "x-expires": 3600000,
     },
   });
-  await queue.bindQueue(mainQueue, mainExchange, mainQueue);
-
-  //** dead letter exchange */
-  await queue.assertExchange(deadLetterExchange, "fanout");
-  queue.assertQueue(deadLetterQueue, {
-    autoDelete: false,
-    durable: true,
-    arguments: {
-      "x-queue-mode": "lazy",
-    },
-  });
-  await queue.bindQueue(deadLetterQueue, deadLetterExchange);
-
-  // register dlx-exchange and dlx queue
-  // await queue.registerQueue(
-  //   { exchange: { exName: deadLetterExchange, type: "fanout" } },
-  //   {
-  //     queue: {
-  //       qName: deadLetterQueue,
-  //       routingKey: "",
-  //       options: {
-  //         autoDelete: false,
-  //         durable: true,
-  //         arguments: {
-  //           "x-queue-mode": "lazy",
-  //         },
-  //       },
-  //     },
-  //   }
-  // );
-
-  // register demo queue
-  // await queue.registerQueue(
-  //   { exchange: { exName: mainExchange } },
-  //   {
-  //     queue: {
-  //       qName: mainQueue,
-  //       routingKey: mainQueue,
-  //       options: {
-  //         autoDelete: false,
-  //         durable: true,
-  //         arguments: {
-  //           "x-queue-mode": "lazy",
-  //           "x-dead-letter-exchange": deadLetterExchange,
-  //         },
-  //       },
-  //     },
-  //   }
-  // );
+  await queue.bindQueue(mainQueue, mainExchange, mainExchange);
+  await queue.bindQueue(mainQueue, routingExchange, mainQueue);
 
   console.log("success register queues");
   process.exit();
