@@ -7,12 +7,12 @@ const Queue = require("./queue");
 
   const deadLetterExchange = "routing.deadletter";
   const failedExchange = "routing.failed";
-  const routingExchange = "routing.retry";
+  const retryExchange = "routing.retry";
 
   //** Config failed and retry */
   await queue.assertExchange(deadLetterExchange, "headers");
   await queue.assertExchange(failedExchange, "fanout");
-  await queue.assertExchange(routingExchange, "direct");
+  await queue.assertExchange(retryExchange, "direct");
 
   queue.assertQueue("queue.failed", {
     autoDelete: false,
@@ -32,7 +32,7 @@ const Queue = require("./queue");
     durable: true,
     arguments: {
       count: 1,
-      "x-dead-letter-exchange": routingExchange,
+      "x-dead-letter-exchange": retryExchange,
       "x-message-ttl": 1000,
     },
   });
@@ -42,7 +42,7 @@ const Queue = require("./queue");
     durable: true,
     arguments: {
       count: 2,
-      "x-dead-letter-exchange": routingExchange,
+      "x-dead-letter-exchange": retryExchange,
       "x-message-ttl": 5000,
     },
   });
@@ -52,7 +52,7 @@ const Queue = require("./queue");
     durable: true,
     arguments: {
       count: 3,
-      "x-dead-letter-exchange": routingExchange,
+      "x-dead-letter-exchange": retryExchange,
       "x-message-ttl": 10000,
     },
   });
@@ -91,7 +91,7 @@ const Queue = require("./queue");
     },
   });
   await queue.bindQueue(mainQueue, mainExchange, mainExchange);
-  await queue.bindQueue(mainQueue, routingExchange, mainQueue);
+  await queue.bindQueue(mainQueue, retryExchange, mainQueue);
 
   console.log("success register queues");
   process.exit();
